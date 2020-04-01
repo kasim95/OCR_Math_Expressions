@@ -129,3 +129,6 @@ dmypy.json
 other/*
 HASYv2/*
 trained_models/*
+
+# ignore trained models
+*.h5
