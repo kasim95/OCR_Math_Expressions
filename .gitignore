@@ -130,6 +130,7 @@ other/*
 HASYv2/*
 trained_models/*
 data/*
+Custom_Dataset/*
 
 # ignore trained models
 *.h5
@@ -143,3 +144,9 @@ keras-yolo3/.idea/*
 *.h5
 logs/
 *_test.py
+
+# RCNN
+RCNN/other/*
+RCNN/research/object_detection/faster_rcnn_resnet50_coco_2018_01_28/*
+RCNN/research/object_detection/trained_inference_graph/*
+RCNN/research/object_detection/training/*
