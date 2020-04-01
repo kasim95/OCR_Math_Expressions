@@ -129,6 +129,17 @@ dmypy.json
 other/*
 HASYv2/*
 trained_models/*
+data/*
 
 # ignore trained models
 *.h5
+*.weights
+
+# keras-yolo
+keras-yolo3/.idea/*
+*.jpg
+*.png
+*.weights
+*.h5
+logs/
+*_test.py
