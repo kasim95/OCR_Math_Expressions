@@ -1,3 +1,6 @@
 [submodule "models"]
 	path = models
 	url = https://github.com/kasim95/models.git
+[submodule "keras-yolo3"]
+	path = keras-yolo3
+	url = https://github.com/kasim95/keras-yolo3.git
