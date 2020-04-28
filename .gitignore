@@ -127,10 +127,13 @@ dmypy.json
 .idea/*
 
 other/*
+discarded_stuff/*
+Report/*
 HASYv2/*
 trained_models/*
 data/*
 Custom_Dataset/*
+Scratchpad.ipynb
 
 # ignore trained models
 *.h5
