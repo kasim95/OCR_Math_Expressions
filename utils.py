@@ -31,6 +31,9 @@ from sklearn.metrics import classification_report
 import scipy
 import glob
 
+# Object Detection Metrics
+import xml.etree.ElementTree as ET
+
 
 __all__ = [
 'read_csv',
@@ -43,12 +46,16 @@ __all__ = [
 'get_df_split',
 'gen_x_y_train_test_stratified_1df',
 'process_x_y_train_test_stratified_2df',
+'process_x_y_train_test_stratified_ann',
 'get_label_count_df',
 'get_label_count_train_test_dfs',
 'dir_',
 'model_dir',
 'data_dir',
 'processed_data_dir',
+'read_annotation',
+'get_iou',
+'calculate_map',
 ]
 
 dir_ = 'HASYv2/'
@@ -184,6 +191,22 @@ def process_x_y_train_test_stratified_2df(_tr, _ts, input_shape):
     
     return X_train, X_test, y_train, y_test
 
+def process_x_y_train_test_stratified_ann(_tr, _ts, input_shape):
+	X_train = np.array(list(_tr['img']))
+	y_train = np.array(list(_tr['symbol_id_ohe']))
+	X_train = X_train.reshape((X_train.shape[0],input_shape[0]))
+	# Normalize data to 0-1
+	X_train = X_train.astype("float32") / 255.0
+	# test df
+	X_test = np.array(list(_ts['img']))
+	y_test = np.array(list(_ts['symbol_id_ohe']))
+	X_test = X_test.reshape((X_test.shape[0],input_shape[0]))
+	# Normalize data to 0-1
+	X_test = X_test.astype("float32") / 255.0
+
+	return X_train, X_test, y_train, y_test
+
+
 # Dataset metrics
 # generate label counts for dataframe and list
 def get_label_count_df(df_train, df_test, sym_list):
@@ -230,7 +253,98 @@ def get_label_count_list(lst_data, sym_list):
         labels_count[j] += 1
     return labels_count
 
+# ************************************************************
+# Object Detection metrics
+
+# read xml file
+def read_annotation(xml_file):
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+    all_boxes = []
+    for i in root.iter('object'):
+        ymin, xmin, ymax, xmax = None, None, None, None
+        for j in i.findall("bndbox"):
+            ymin = int(j.find("ymin").text)
+            xmin = int(j.find("xmin").text)
+            ymax = int(j.find("ymax").text)
+            xmax = int(j.find("xmax").text)
+        # bbox = [xmin, xmax, ymin, ymax]
+        bbox = {
+            'x1':xmin,
+            'x2':xmax,
+            'y1':ymin,
+            'y2':ymax
+        }
+        all_boxes.append(bbox)
+    return all_boxes
+
+# calculate iou
+def get_iou(bb1, bb2):
+    """
+    Calculate the Intersection over Union (IoU) of two bounding boxes.
+
+    Parameters
+    ----------
+    bb1 : dict
+        Keys: {'x1', 'x2', 'y1', 'y2'}
+        The (x1, y1) position is at the top left corner,
+        the (x2, y2) position is at the bottom right corner
+    bb2 : dict
+        Keys: {'x1', 'x2', 'y1', 'y2'}
+        The (x, y) position is at the top left corner,
+        the (x2, y2) position is at the bottom right corner
+
+    Returns
+    -------
+    float
+        in [0, 1]
+    """
+    assert bb1['x1'] < bb1['x2']
+    assert bb1['y1'] < bb1['y2']
+    assert bb2['x1'] < bb2['x2']
+    assert bb2['y1'] < bb2['y2']
+
+    # determine the coordinates of the intersection rectangle
+    x_left = max(bb1['x1'], bb2['x1'])
+    y_top = max(bb1['y1'], bb2['y1'])
+    x_right = min(bb1['x2'], bb2['x2'])
+    y_bottom = min(bb1['y2'], bb2['y2'])
+
+    if x_right < x_left or y_bottom < y_top:
+        return 0.0
+
+    # The intersection of two axis-aligned bounding boxes is always an
+    # axis-aligned bounding box
+    intersection_area = (x_right - x_left) * (y_bottom - y_top)
+
+    # compute the area of both AABBs
+    bb1_area = (bb1['x2'] - bb1['x1']) * (bb1['y2'] - bb1['y1'])
+    bb2_area = (bb2['x2'] - bb2['x1']) * (bb2['y2'] - bb2['y1'])
+
+    # compute the intersection over union by taking the intersection
+    # area and dividing it by the sum of prediction + ground-truth
+    # areas - the interesection area
+    iou = intersection_area / float(bb1_area + bb2_area - intersection_area)
+    assert iou >= 0.0
+    assert iou <= 1.0
+    return iou
 
 
+def calculate_map(map_data):
+    """
+    map_data: a list of tuples with each tuple containing (precision, recall)
+    """
+    md = sorted(map_data, key=lambda x:x[1])
+    md = [(i, round(j, 1)) for i, j in md]
+    ap_11_precs = {str(round(k*0.1, 1)):None for k in range(11)}
 
+    for p_, r_ in md:
+        if not ap_11_precs[str(r_)] or p_ > ap_11_precs[str(r_)]:
+            ap_11_precs[str(r_)] =  p_
+            
+    ap_11_precs_list = list(ap_11_precs.values())
+    ap_11_precs_list = [z if z != None else 0 for z in ap_11_precs_list]
+    mean_ap = np.mean(ap_11_precs_list)
+    return mean_ap
 
+# ********************************************************
