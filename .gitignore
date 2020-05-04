@@ -145,12 +145,6 @@ keras-yolo3/.idea/*
 logs/
 *_test.py
 
-# RCNN
-# RCNN/other/*
-# RCNN/research/object_detection/faster_rcnn_resnet50_coco_2018_01_28/*
-# RCNN/research/object_detection/trained_inference_graph/*
-# RCNN/research/object_detection/training/*
-
 # ignore dataset
 HASYv2/*
 data/*
@@ -160,3 +154,9 @@ datasets/*
 
 # discarded stuff
 RCNN/*
+# RCNN
+# RCNN/other/*
+# RCNN/research/object_detection/faster_rcnn_resnet50_coco_2018_01_28/*
+# RCNN/research/object_detection/trained_inference_graph/*
+# RCNN/research/object_detection/training/*
+
