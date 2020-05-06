@@ -57,7 +57,7 @@ class Lexer:
             else:
                 return exp
         else:
-            result = ['Z', '='] + exp
+            result = ['e', '='] + exp
             return result
 
     def checkInput(self, chars):

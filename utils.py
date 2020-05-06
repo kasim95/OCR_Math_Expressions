@@ -8,7 +8,6 @@ import numpy as np
 # image processing
 from PIL import Image
 
-
 # tf and keras
 import tensorflow as tf
 import keras
@@ -36,32 +35,35 @@ import xml.etree.ElementTree as ET
 
 
 __all__ = [
-'read_csv',
-'remove_transparency',
-'preprocess_img',
-'populate_images',
-'convert_to_one_hot_encode',
-'one_hot_encode_to_char',
-'convert_pred_list_ohe_to_labels',
-'get_df_split',
-'gen_x_y_train_test_stratified_1df',
-'process_x_y_train_test_stratified_2df',
-'process_x_y_train_test_stratified_ann',
-'get_label_count_df',
-'get_label_count_train_test_dfs',
-'dir_',
-'model_dir',
-'data_dir',
-'processed_data_dir',
-'read_annotation',
-'get_iou',
-'calculate_map',
+    'read_csv',
+    'remove_transparency',
+    'preprocess_img',
+    'populate_images',
+    'convert_to_one_hot_encode',
+    'one_hot_encode_to_char',
+    'one_hot_encode_to_char_list',
+    'convert_pred_list_ohe_to_labels',
+    'get_df_split',
+    'gen_x_y_train_test_stratified_1df',
+    'process_x_y_train_test_stratified_2df',
+    'process_x_y_train_test_stratified_ann',
+    'get_label_count_df',
+    'get_label_count_train_test_dfs',
+    'dir_',
+    'model_dir',
+    'data_dir',
+    'processed_data_dir',
+    'read_annotation',
+    'get_iou',
+    'calculate_map',
 ]
+
 
 dir_ = 'HASYv2/'
 model_dir = 'trained_models/'
 data_dir = 'data/'
-processed_data_dir ='processed_data/'
+processed_data_dir = 'processed_data/'
+
 
 def read_csv(path):
     return pd.read_csv(path)
@@ -86,13 +88,14 @@ def remove_transparency(im, bg_colour=(255, 255, 255)):
     else:
         return im
 
+
 def preprocess_img(path):
     # Open Image
     im = Image.open(dir_ + path)
     
     # Resize image to 32 by 32
-    if im.size != (32,32):
-        im = im.resize((32,32))
+    if im.size != (32, 32):
+        im = im.resize((32, 32))
         
     # Convert image to a single greyscale channel
     im = remove_transparency(im).convert('L')
@@ -100,7 +103,7 @@ def preprocess_img(path):
     # Convert image to numpy array
     I = np.asarray(im)
     
-    #Close image
+    # Close image
     im.close()
     
     return I
@@ -112,16 +115,18 @@ def populate_images(dataset):
         path = dataset.iloc[i]['path']
         pathsplit = path.split('/')
         if len(pathsplit) > 2:
-            path = '/'.join([pathsplit[-2],pathsplit[-1]])
+            path = '/'.join([pathsplit[-2], pathsplit[-1]])
         img = preprocess_img(path)
         temp.append(img)
     dataset['img'] = [i for i in temp]
     return dataset
 
+
 def convert_to_one_hot_encode(data, no_categories):
     data = np.array(data).reshape(-1)
     print('len of dataset', len(data))
     return np.eye(no_categories)[data]
+
 
 # to process output to the value
 # returns a list with all the categories with more than 50% accuracy
@@ -131,7 +136,7 @@ def one_hot_encode_to_char(arr, threshold=0.5, get_max=True):
     for i in range(len(arr)):
         if arr[i] >= threshold:
             result.append((val, arr[i]))
-        val +=1
+        val += 1
     _max = []
     high = 0
     if get_max:
@@ -143,12 +148,25 @@ def one_hot_encode_to_char(arr, threshold=0.5, get_max=True):
     else:
         return [i[0] for i in result]
 
+
+def one_hot_encode_to_char_list(arr, threshold=0.5, get_max=True):
+    result = []
+    for i in range(len(arr)):
+        if arr[i] >= threshold:
+            result.append((i, arr[i]))
+    _max = []
+    result = sorted(result, key=lambda x: x[1], reverse=True)
+    if get_max:
+        return result[0]
+    return result
+
+
 def convert_pred_list_ohe_to_labels(pred_data, threshold=0.5, get_max=True):
     result = []
     for i in range(len(pred_data)):
         val = one_hot_encode_to_char(pred_data[i], threshold=threshold, get_max=get_max)
         if len(val) > 0:
-            if get_max == True:
+            if get_max:
                 result.append(val[0])
             else:
                 result.append(val)
@@ -164,47 +182,50 @@ def get_df_split(ds, stratify_col, test_size=0.2):
     _train, _test = train_test_split(ds, test_size=test_size, stratify=ds[stratify_col])
     return _train, _test
 
+
 # function to split whole dataset at once (old function)
 def gen_x_y_train_test_stratified_1df(dataset, input_shape, test_size=0.2):
     x = np.array(list(dataset['img']))
     y = np.array(list(dataset['symbol_id_ohe']))
-    x = x.reshape((x.shape[0],1,input_shape[1],input_shape[2]))
+    x = x.reshape((x.shape[0], 1, input_shape[1], input_shape[2]))
     # Normalize data to 0-1
     x = x.astype("float32") / 255.0
     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=test_size,  stratify=y)
     return X_train, X_test, y_train, y_test
+
 
 # function to process already split data
 def process_x_y_train_test_stratified_2df(_tr, _ts, input_shape):
     # train df
     X_train = np.array(list(_tr['img']))
     y_train = np.array(list(_tr['symbol_id_ohe']))
-    X_train = X_train.reshape((X_train.shape[0],1,input_shape[1],input_shape[2]))
+    X_train = X_train.reshape((X_train.shape[0], 1, input_shape[1], input_shape[2]))
     # Normalize data to 0-1
     X_train = X_train.astype("float32") / 255.0
     # test df
     X_test = np.array(list(_ts['img']))
     y_test = np.array(list(_ts['symbol_id_ohe']))
-    X_test = X_test.reshape((X_test.shape[0],1,input_shape[1],input_shape[2]))
+    X_test = X_test.reshape((X_test.shape[0], 1, input_shape[1], input_shape[2]))
     # Normalize data to 0-1
     X_test = X_test.astype("float32") / 255.0
     
     return X_train, X_test, y_train, y_test
 
-def process_x_y_train_test_stratified_ann(_tr, _ts, input_shape):
-	X_train = np.array(list(_tr['img']))
-	y_train = np.array(list(_tr['symbol_id_ohe']))
-	X_train = X_train.reshape((X_train.shape[0],input_shape[0]))
-	# Normalize data to 0-1
-	X_train = X_train.astype("float32") / 255.0
-	# test df
-	X_test = np.array(list(_ts['img']))
-	y_test = np.array(list(_ts['symbol_id_ohe']))
-	X_test = X_test.reshape((X_test.shape[0],input_shape[0]))
-	# Normalize data to 0-1
-	X_test = X_test.astype("float32") / 255.0
 
-	return X_train, X_test, y_train, y_test
+def process_x_y_train_test_stratified_ann(_tr, _ts, input_shape):
+    X_train = np.array(list(_tr['img']))
+    y_train = np.array(list(_tr['symbol_id_ohe']))
+    X_train = X_train.reshape((X_train.shape[0], input_shape[0]))
+    # Normalize data to 0-1
+    X_train = X_train.astype("float32") / 255.0
+    # test df
+    X_test = np.array(list(_ts['img']))
+    y_test = np.array(list(_ts['symbol_id_ohe']))
+    X_test = X_test.reshape((X_test.shape[0], input_shape[0]))
+    # Normalize data to 0-1
+    X_test = X_test.astype("float32") / 255.0
+
+    return X_train, X_test, y_train, y_test
 
 
 # Dataset metrics
@@ -217,13 +238,14 @@ def get_label_count_df(df_train, df_test, sym_list):
         train_labels_count[i] = 0
         test_labels_count[i] = 0
     for i in range(len(df_train)):
-        train_labels_count[df_train.loc[i,'symbol_id']] += 1
+        train_labels_count[df_train.loc[i, 'symbol_id']] += 1
     for i in range(len(df_test)):
-        test_labels_count[df_test.loc[i,'symbol_id']] += 1
+        test_labels_count[df_test.loc[i, 'symbol_id']] += 1
     for i in sym_list:
         perc = (train_labels_count[i] / (train_labels_count[i] + test_labels_count[i])) * 100
-        perc_labels_count[i] = (train_labels_count[i], test_labels_count[i], round(perc,2))
+        perc_labels_count[i] = (train_labels_count[i], test_labels_count[i], round(perc, 2))
     return perc_labels_count
+
 
 def get_label_count_train_test_dfs(df_train, df_test):
     train_labels_count = {}
@@ -236,13 +258,14 @@ def get_label_count_train_test_dfs(df_train, df_test):
         train_labels_count[i] = 0
         test_labels_count[i] = 0
     for i in range(len(df_train)):
-        train_labels_count[df_train.loc[i,'symbol_id']] += 1
+        train_labels_count[df_train.loc[i, 'symbol_id']] += 1
     for i in range(len(df_test)):
-        test_labels_count[df_test.loc[i,'symbol_id']] += 1
+        test_labels_count[df_test.loc[i, 'symbol_id']] += 1
     for i in sym_list:
         perc = (train_labels_count[i] / (train_labels_count[i] + test_labels_count[i])) * 100
-        perc_labels_count[i] = (train_labels_count[i], test_labels_count[i], round(perc,2))
+        perc_labels_count[i] = (train_labels_count[i], test_labels_count[i], round(perc, 2))
     return perc_labels_count
+
 
 def get_label_count_list(lst_data, sym_list):
     labels_count = {}
@@ -252,6 +275,7 @@ def get_label_count_list(lst_data, sym_list):
         j = one_hot_encode_to_char(lst_data[i])[0]
         labels_count[j] += 1
     return labels_count
+
 
 # ************************************************************
 # Object Detection metrics
@@ -270,13 +294,14 @@ def read_annotation(xml_file):
             xmax = int(j.find("xmax").text)
         # bbox = [xmin, xmax, ymin, ymax]
         bbox = {
-            'x1':xmin,
-            'x2':xmax,
-            'y1':ymin,
-            'y2':ymax
+            'x1': xmin,
+            'x2': xmax,
+            'y1': ymin,
+            'y2': ymax
         }
         all_boxes.append(bbox)
     return all_boxes
+
 
 # calculate iou
 def get_iou(bb1, bb2):
@@ -334,16 +359,16 @@ def calculate_map(map_data):
     """
     map_data: a list of tuples with each tuple containing (precision, recall)
     """
-    md = sorted(map_data, key=lambda x:x[1])
+    md = sorted(map_data, key=lambda x: x[1])
     md = [(i, round(j, 1)) for i, j in md]
-    ap_11_precs = {str(round(k*0.1, 1)):None for k in range(11)}
+    ap_11_precs = {str(round(k*0.1, 1)): None for k in range(11)}
 
     for p_, r_ in md:
         if not ap_11_precs[str(r_)] or p_ > ap_11_precs[str(r_)]:
             ap_11_precs[str(r_)] =  p_
             
     ap_11_precs_list = list(ap_11_precs.values())
-    ap_11_precs_list = [z if z != None else 0 for z in ap_11_precs_list]
+    ap_11_precs_list = [z if z is not None else 0 for z in ap_11_precs_list]
     mean_ap = np.mean(ap_11_precs_list)
     return mean_ap
 
