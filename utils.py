@@ -28,13 +28,17 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 import scipy
+
 import glob
+from itertools import product
 
 # Object Detection Metrics
 import xml.etree.ElementTree as ET
 
 
 __all__ = [
+    'SIMILARS_MAP',
+    'GREEKS',
     'read_csv',
     'remove_transparency',
     'preprocess_img',
@@ -53,6 +57,8 @@ __all__ = [
     'model_dir',
     'data_dir',
     'processed_data_dir',
+    'get_symbols',
+    'generate_eqns',
     'read_annotation',
     'get_iou',
     'calculate_map',
@@ -63,6 +69,21 @@ dir_ = 'HASYv2/'
 model_dir = 'trained_models/'
 data_dir = 'data/'
 processed_data_dir = 'processed_data/'
+
+
+SIMILARS_MAP = [
+            (r'\times', 'x', 'X'),
+            ('y', 'Y'),
+            ('c', r'\subset', r'\subseteq'),
+            ('g', '9'),
+            ('o', 'O', '0'),
+            ('s', '5'),
+            ('z', 'Z', '2'),
+        ]
+
+GREEKS = [r'\sigma', r'\Sigma', r'\gamma', r'\delta', r'\Delta',
+          r'\eta', r'\theta', r'\epsilon', r'\lambda', r'\mu',
+          r'\Pi', r'\rho', r'\phi', r'\omega', r'\ohm']
 
 
 def read_csv(path):
@@ -275,6 +296,36 @@ def get_label_count_list(lst_data, sym_list):
         j = one_hot_encode_to_char(lst_data[i])[0]
         labels_count[j] += 1
     return labels_count
+
+
+# Error Handling before Syntactical Analysis
+def get_symbols(syms_):
+    result_syms = []
+    for i in syms_:
+        sym_maps = None
+        for j in i:
+            #if sym_maps is not None:
+            #    break
+            # ignore greeks for now since greeks are not included in lexer
+            if j[0] in GREEKS:
+                continue
+            for k in SIMILARS_MAP:
+                if j[0] in k:
+                    sym_maps = k
+                    break
+            break
+        if sym_maps is not None:
+            result_syms.append(sym_maps)
+        else:
+            for j in i:
+                if j[0] not in GREEKS:
+                    result_syms.append((j[0],))
+                    break
+    return result_syms
+
+
+def generate_eqns(err_handled_symbols):
+    return [i for i in product(*err_handled_symbols)]
 
 
 # ************************************************************

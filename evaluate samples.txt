@@ -1,0 +1,2 @@
+python evaluate.py -m "trained_models/model3.h5"  -i "datasets/object_detection/evaluate/exp0030.png" -s True 
+
