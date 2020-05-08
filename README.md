@@ -26,11 +26,25 @@ The Project is divided into three tasks:
 python3 evaluate.py -m "trained_models/model3.h5"  -i "datasets/object_detection/evaluate/exp0030.png"
 ```
 
----
-## Example
+Example image for characters in expression located with Bounding boxes
+![Object Detection](plots/Object_Detection_bboxes.png)
 
+MathML Output:
+```xml
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+    <mrow>
+        <mi>Z</mi>
+        <mo>=</mo>
+        <mi>X</mi>
+        <mo>+</mo>
+        <mi>Y</mi>
+    </mrow>
+</math>
+
+```
 
 ---
+
 ## Training
 
 Convolutional Neural Networks and Dense Networks are trained in *Classification_task.ipynb*
@@ -50,6 +64,7 @@ Object Detection Models are trained in their respective submodules
     > Tensorflow Object Detection API<br>Used to train Faster-RCNN with Resnet-50 model on object_detection dataset
 
 ---
+
 ## Project Structure:
 
 Directories
@@ -61,6 +76,7 @@ Directories
 * **trained_models/**    : Contains saved models weights for CNNs and ANNs
 
 Notebooks
+* **Dataset_Preprocessing** : Notebook containing code to combine screen dataset, combine with custom images and generate train-test splits
 * **OD_Character_Segmentation.ipynb** : Notebook demonstrating Character Localization using Contour Search
 * **OD_Faster-RCNN.ipynb** : Notebook demonstrating Character Localization using Faster-RCNN with Resnet50 model
 * **OD_yolov3.ipynb** : Notebook demonstrating Character Localization using Tiny YOLOv3 model
@@ -72,7 +88,7 @@ Python scripts
 
 ---
 ## Issues
-At the moment, Parser rules are set for binary operators only. This limits the scope of the Project to supported operators.
+At the moment, parser rules are set for binary operators only. This limits the scope of the Project to supported operators.
 
 Supported operators in mathematical expression:
  * =
@@ -82,9 +98,10 @@ Supported operators in mathematical expression:
  * &div;
  * &ast;
  * &times;
-  
-
+ * &percnt;
+ 
 ---
+
 ## Note
 This Project has been tested in the following environment:
 * Python 3.6.9
